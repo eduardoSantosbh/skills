@@ -211,7 +211,7 @@ Use `BlockingQueue`, `ConcurrentHashMap`, `CountDownLatch`, `Semaphore`, and `Cy
 Run the read-only analysis script to detect common antipatterns in a Java source file:
 
 ```
-python3 /home/devops/.claude/skills/effective-java-best-practices/scripts/analyze-java.py <path-to-java-file>
+python3 /home/devops/.codex/skills/effective-java-best-practices/scripts/analyze-java.py <path-to-java-file>
 ```
 
 Report findings grouped by chapter with the item number, a one-line summary, and a concrete code suggestion.
