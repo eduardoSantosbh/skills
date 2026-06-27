@@ -17,7 +17,6 @@ if [[ -z "$VERSION" ]]; then
   exit 1
 fi
 
-MAJOR=$(echo "$VERSION" | cut -d. -f1)
 MINOR=$(echo "$VERSION" | cut -d. -f2)
 
 echo "Go version: $VERSION"

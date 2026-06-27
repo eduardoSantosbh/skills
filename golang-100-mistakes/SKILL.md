@@ -1,6 +1,6 @@
 ---
 name: golang-100-mistakes
-description: Reviews Go code against the 100 common mistakes catalogued in the book '100 Go Mistakes and How to Avoid Them'. Use when auditing Go code for variable shadowing, slice/map pitfalls, concurrency bugs, error handling anti-patterns, testing gaps, or performance regressions. Covers all ten categories: code organization, data types, control structures, strings, functions and methods, error management, concurrency foundations and practice, standard library, testing, and optimizations. Don't use for general Go syntax help, new feature implementation, non-Go code review, or architecture decisions unrelated to Go idioms.
+description: "Reviews Go code against the 100 common mistakes catalogued in the book '100 Go Mistakes and How to Avoid Them'. Use when auditing Go code for variable shadowing, slice/map pitfalls, concurrency bugs, error handling anti-patterns, testing gaps, or performance regressions. Covers all ten categories: code organization, data types, control structures, strings, functions and methods, error management, concurrency foundations and practice, standard library, testing, and optimizations. Don't use for general Go syntax help, new feature implementation, non-Go code review, or architecture decisions unrelated to Go idioms."
 ---
 
 # golang-100-mistakes
@@ -38,12 +38,12 @@ Load only the reference files matching the identified categories.
 
 | Categories | File |
 |---|---|
-| Code & Project Organization (#1–16) | `references/code-organization.md` |
-| Data Types (#17–29) | `references/data-types.md` |
-| Control Structures (#30–35) | `references/control-structures.md` |
-| Strings (#36–41), Functions (#42–47), Error Mgmt (#48–54) | `references/strings-functions-errors.md` |
-| Concurrency Foundations (#55–60) + Practice (#61–74) | `references/concurrency.md` |
-| Standard Library (#75–81), Testing (#82–90), Optimizations (#91–100) | `references/stdlib-testing-optimizations.md` |
+| Code & Project Organization (#1–16) | `<skill-dir>/references/code-organization.md` |
+| Data Types (#17–29) | `<skill-dir>/references/data-types.md` |
+| Control Structures (#30–35) | `<skill-dir>/references/control-structures.md` |
+| Strings (#36–41), Functions (#42–47), Error Mgmt (#48–54) | `<skill-dir>/references/strings-functions-errors.md` |
+| Concurrency Foundations (#55–60) + Practice (#61–74) | `<skill-dir>/references/concurrency.md` |
+| Standard Library (#75–81), Testing (#82–90), Optimizations (#91–100) | `<skill-dir>/references/stdlib-testing-optimizations.md` |
 
 Read each relevant file now and keep the patterns in working context.
 
