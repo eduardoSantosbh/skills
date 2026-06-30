@@ -35,6 +35,7 @@ Classify before coding:
 | Cancel / stop goroutines | Quit channel (`chan struct{}`) |
 | Simple counter / flag | `sync/atomic` typed ops |
 | Custom spin lock | `atomic.CompareAndSwapInt32` + `runtime.Gosched()` |
+| Fixed-size concurrent workers | Worker pool (shared input channel + N goroutines) |
 
 ---
 
@@ -231,6 +232,76 @@ func Broadcast[K any](quit <-chan struct{}, in <-chan K, n int) []<-chan K {
 }
 ```
 
+### Worker pool — bounded concurrent processing
+
+N goroutines share a single input channel. The pool limits concurrency without spawning unbounded goroutines:
+
+```go
+func StartWorkers(n int, jobs <-chan Job) {
+    for i := 0; i < n; i++ {
+        go func() {
+            for job := range jobs {
+                process(job)
+            }
+        }()
+    }
+}
+
+// Usage
+jobs := make(chan Job)
+StartWorkers(10, jobs)
+
+// Feed work — workers pick up jobs as they become free
+for _, j := range workItems {
+    jobs <- j
+}
+close(jobs) // signals all workers to exit after draining
+```
+
+**With quit channel** (when you need early cancellation):
+
+```go
+func StartWorkers(n int, quit <-chan struct{}, jobs <-chan Job) {
+    for i := 0; i < n; i++ {
+        go func() {
+            for {
+                select {
+                case job, ok := <-jobs:
+                    if !ok {
+                        return
+                    }
+                    process(job)
+                case <-quit:
+                    return
+                }
+            }
+        }()
+    }
+}
+```
+
+**With results collection** (scatter-gather):
+
+```go
+func StartWorkers(n int, jobs <-chan Job) <-chan Result {
+    results := make(chan Result)
+    var wg sync.WaitGroup
+    wg.Add(n)
+    for i := 0; i < n; i++ {
+        go func() {
+            defer wg.Done()
+            for job := range jobs {
+                results <- process(job)
+            }
+        }()
+    }
+    go func() { wg.Wait(); close(results) }()
+    return results
+}
+```
+
+> **Sizing the pool:** start with `runtime.NumCPU()` for CPU-bound work; for I/O-bound work (HTTP, disk) use a higher number measured by benchmarking.
+
 ### Deadlock avoidance — consistent lock ordering
 
 When locking multiple mutexes simultaneously, sort them by a stable key before acquiring:
@@ -300,6 +371,8 @@ golangci-lint run --enable=gocritic,revive ./...
 - [ ] Multiple mutexes always acquired in the same sorted order
 - [ ] No shared pointer sent over a channel (send a copy or use immutable data)
 - [ ] Semaphore `release` is deferred immediately after `acquire`
+- [ ] Worker pool size is explicit and justified (`NumCPU()` for CPU-bound, benchmarked for I/O-bound)
+- [ ] `close(jobs)` is called after all work is submitted so workers exit cleanly
 
 ---
 
