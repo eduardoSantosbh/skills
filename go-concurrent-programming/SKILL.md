@@ -93,14 +93,92 @@ cond.L.Unlock()
 
 > **Anti-pattern:** calling `Signal()` before the reader calls `Wait()` loses the notification. Ensure the producer holds the lock when signalling, or use a flag the reader checks in its loop condition.
 
-### Channel-based semaphore
+### Semáforo — três variantes
+
+**1. Channel-based (simples)** — capacidade do canal define o limite:
 
 ```go
 sem := make(chan struct{}, maxConcurrent)
 
-sem <- struct{}{}   // acquire
-defer func() { <-sem }()  // release
+sem <- struct{}{}          // acquire — bloqueia se cheio
+defer func() { <-sem }()  // release — sempre via defer
 ```
+
+Preferir esta variante para casos simples de limite de concorrência.
+
+**2. sync.Cond-based** — mais flexível, permite inspeção do estado (ch5):
+
+```go
+type Semaphore struct {
+    permits int
+    cond    *sync.Cond
+}
+
+func NewSemaphore(n int) *Semaphore {
+    return &Semaphore{n, sync.NewCond(&sync.Mutex{})}
+}
+
+func (s *Semaphore) Acquire() {
+    s.cond.L.Lock()
+    for s.permits <= 0 {  // loop — nunca usar if
+        s.cond.Wait()
+    }
+    s.permits--
+    s.cond.L.Unlock()
+}
+
+func (s *Semaphore) Release() {
+    s.cond.L.Lock()
+    s.permits++
+    s.cond.Signal()
+    s.cond.L.Unlock()
+}
+```
+
+**3. Semáforo ponderado (weighted)** — acquire/release de N permits de uma vez (exercício 5.3):
+
+```go
+func (s *WeightedSemaphore) Acquire(n int) {
+    s.cond.L.Lock()
+    for s.permits-n < 0 {
+        s.cond.Wait()
+    }
+    s.permits -= n
+    s.cond.L.Unlock()
+}
+
+func (s *WeightedSemaphore) Release(n int) {
+    s.cond.L.Lock()
+    s.permits += n
+    s.cond.Broadcast() // Broadcast — múltiplos waiters podem ser satisfeitos
+    s.cond.L.Unlock()
+}
+```
+
+> **Weighted usa `Broadcast`**, não `Signal` — ao liberar N permits vários waiters podem se tornar elegíveis ao mesmo tempo.
+
+**4. Release-before-acquire** — semáforo iniciado em 0 para sincronizar conclusão (ch5):
+
+```go
+// Goroutine pai espera filho terminar:
+done := NewSemaphore(0)
+go func() {
+    doWork()
+    done.Release() // sinaliza conclusão
+}()
+done.Acquire() // bloqueia até Release
+```
+
+Este padrão substitui `time.Sleep` como mecanismo de espera — nunca use sleep para sincronizar goroutines.
+
+**Quando usar cada variante:**
+
+| Necessidade | Variante |
+|-------------|----------|
+| Limitar N acessos simultâneos | Channel-based |
+| Inspecionar permits restantes | sync.Cond-based |
+| Recursos com custo variável | Weighted |
+| Aguardar conclusão de goroutine | Release-before-acquire (init 0) |
 
 ### WaitGroup — wait for goroutines to complete
 
